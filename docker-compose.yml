@@ -1,0 +1,16 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: saas_vencimientos_db
+    restart: always
+    environment:
+      POSTGRES_USER: saas
+      POSTGRES_PASSWORD: saas_password
+      POSTGRES_DB: vencimientos_db
+    ports:
+      - "5432:5432"
+    volumes:
+      - saas_pg_data:/var/lib/postgresql/data
+
+volumes:
+  saas_pg_data:
