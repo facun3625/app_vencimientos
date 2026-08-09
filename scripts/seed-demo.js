@@ -1,3 +1,4 @@
+require("dotenv/config");
 const { PrismaClient } = require("@prisma/client");
 const { addDays, subDays } = require("date-fns");
 const bcrypt = require("bcryptjs");
