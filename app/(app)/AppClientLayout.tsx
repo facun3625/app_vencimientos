@@ -83,8 +83,10 @@ export default function AppClientLayout({
           >
             <Menu size={22} />
           </button>
-          <img src="/logo_fondo_oscuro.png" alt="Kairos" className="h-6 w-auto object-contain shrink-0" />
-          <span className="font-medium text-xs text-[var(--text-muted)] truncate ml-auto">{workspaceName}</span>
+          <div className="flex flex-col min-w-0">
+            <img src="/logo_fondo_oscuro.png" alt="Kairos" className="h-9 w-auto object-contain self-start" />
+            <span className="font-medium text-xs text-[var(--text-muted)] truncate mt-0.5">{workspaceName}</span>
+          </div>
         </div>
 
         {children}
