@@ -52,6 +52,21 @@ export default function Modal({
         transition: `background-color ${duration}ms ${easing}, backdrop-filter ${duration}ms ${easing}`,
       }}
     >
+      {/* Close button lives on the overlay (not the card) so it always sits at a
+          fixed, reachable spot in the top-right corner with a solid hit area. */}
+      <button
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation();
+          close();
+        }}
+        aria-label="Cerrar"
+        className="fixed top-4 right-4 z-[210] w-11 h-11 rounded-full bg-[#111827] border border-white/10 flex items-center justify-center text-white/70 hover:text-white hover:border-white/25 cursor-pointer transition-colors shadow-lg"
+        style={{ opacity: visible ? 1 : 0, transition: `opacity ${duration}ms ${easing}, color 150ms, border-color 150ms` }}
+      >
+        <X size={20} className="pointer-events-none" />
+      </button>
+
       <div
         className={`relative w-full ${maxWidthClassName}`}
         onClick={(e) => e.stopPropagation()}
@@ -61,13 +76,6 @@ export default function Modal({
           transition: `transform ${duration}ms ${easing}, opacity ${duration}ms ${easing}`,
         }}
       >
-        <button
-          onClick={close}
-          aria-label="Cerrar"
-          className="absolute top-2 right-2 sm:-top-3 sm:-right-3 z-10 w-8 h-8 rounded-full bg-[#111827] border border-white/10 flex items-center justify-center text-white/60 hover:text-white hover:border-white/20 cursor-pointer transition-colors shadow-lg"
-        >
-          <X size={16} />
-        </button>
         <div className="max-h-[85vh] overflow-y-auto overscroll-contain rounded-2xl">
           {children}
         </div>
