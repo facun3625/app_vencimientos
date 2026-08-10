@@ -46,7 +46,7 @@ export default async function CheckoutPage({
 
   return (
     <div className="page-container">
-      <div className="max-w-lg mx-auto">
+      <div className="max-w-lg">
         <Link
           href="/subscription/plans"
           className="inline-flex items-center gap-1.5 text-sm text-[var(--text-muted)] hover:text-white mb-6 transition-colors"
