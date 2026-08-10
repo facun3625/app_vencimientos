@@ -10,6 +10,7 @@ export default function AppClientLayout({
   modal,
   workspaceName,
   userName,
+  userImage,
   impersonating,
   impersonatedEmail,
   isSuperAdmin,
@@ -19,6 +20,7 @@ export default function AppClientLayout({
   modal?: React.ReactNode,
   workspaceName: string,
   userName: string,
+  userImage?: string | null,
   impersonating?: boolean,
   impersonatedEmail?: string,
   isSuperAdmin?: boolean,
@@ -60,6 +62,7 @@ export default function AppClientLayout({
       <Sidebar
         workspaceName={workspaceName}
         userName={userName}
+        userImage={userImage}
         isOpen={isSidebarOpen}
         onClose={() => setIsSidebarOpen(false)}
         isSuperAdmin={isSuperAdmin && !impersonating}

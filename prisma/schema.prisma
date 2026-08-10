@@ -25,6 +25,9 @@ model Workspace {
   id        String   @id @default(cuid())
   name      String
   slug      String   @unique
+  // Logo de la empresa (data URL base64, redimensionado en el cliente). Se
+  // guarda en la DB para que sobreviva a los deploys sin depender del disco.
+  logo      String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   users     User[]

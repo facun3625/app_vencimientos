@@ -15,15 +15,21 @@ export default async function AppLayout({
   if (!session) redirect("/login");
   const user = session.user as any;
 
-  const workspace = user.workspaceId
-    ? await prisma.workspace.findUnique({ where: { id: user.workspaceId }, select: { isDemo: true } })
-    : null;
+  // Traemos nombre/imagen/logo frescos de la DB (no del JWT) para que los
+  // cambios del perfil se reflejen al instante tras revalidar.
+  const [dbUser, workspace] = await Promise.all([
+    prisma.user.findUnique({ where: { id: user.id }, select: { name: true, image: true } }),
+    user.workspaceId
+      ? prisma.workspace.findUnique({ where: { id: user.workspaceId }, select: { name: true, isDemo: true } })
+      : Promise.resolve(null),
+  ]);
 
   return (
     <SessionProvider session={session}>
       <AppClientLayout
-        workspaceName={user.workspaceName}
-        userName={user.name}
+        workspaceName={workspace?.name ?? user.workspaceName}
+        userName={dbUser?.name ?? user.name}
+        userImage={dbUser?.image ?? null}
         impersonating={!!user.impersonating}
         impersonatedEmail={user.impersonatedEmail}
         isSuperAdmin={!!user.isSuperAdmin}

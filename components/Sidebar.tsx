@@ -17,6 +17,7 @@ import {
   ShieldCheck,
   CreditCard,
   MessageSquarePlus,
+  UserCircle,
   X
 } from "lucide-react";
 import { signOut } from "next-auth/react";
@@ -35,12 +36,14 @@ const MENU_ITEMS = [
   { label: "Logs", icon: ShieldAlert, href: "/audit" },
   { label: "Equipo", icon: UserPlus, href: "/team" },
   { label: "Mi Suscripción", icon: CreditCard, href: "/subscription" },
+  { label: "Mi Perfil", icon: UserCircle, href: "/profile" },
   { label: "Sugerir Mejoras", icon: MessageSquarePlus, href: "/suggestions" },
 ];
 
 export default function Sidebar({
   workspaceName,
   userName,
+  userImage,
   isOpen,
   onClose,
   isSuperAdmin,
@@ -48,6 +51,7 @@ export default function Sidebar({
 }: {
   workspaceName: string,
   userName: string,
+  userImage?: string | null,
   isOpen: boolean,
   onClose: () => void,
   isSuperAdmin?: boolean,
@@ -124,15 +128,23 @@ export default function Sidebar({
         </div>
 
         <div className="shrink-0 p-4 border-t border-[var(--border)] bg-black/20">
-          <div className="flex items-center gap-2.5 mb-3">
-            <div className="w-7 h-7 rounded-full bg-slate-700 border border-white/10 flex items-center justify-center text-[10px] font-bold shrink-0">
-              {userName.substring(0,2).toUpperCase()}
+          <Link
+            href="/profile"
+            onClick={handleLinkClick}
+            className="flex items-center gap-2.5 mb-3 rounded-lg -m-1 p-1 hover:bg-white/5 transition-colors"
+          >
+            <div className="w-7 h-7 rounded-full bg-slate-700 border border-white/10 flex items-center justify-center text-[10px] font-bold shrink-0 overflow-hidden">
+              {userImage ? (
+                <img src={userImage} alt={userName} className="w-full h-full object-cover" />
+              ) : (
+                userName.substring(0, 2).toUpperCase()
+              )}
             </div>
             <div className="flex-1 overflow-hidden">
               <p className="text-sm font-medium truncate text-white">{userName}</p>
-              <p className="text-[10px] text-[var(--text-muted)] truncate">Administrador</p>
+              <p className="text-[10px] text-[var(--text-muted)] truncate">Ver mi perfil</p>
             </div>
-          </div>
+          </Link>
           <div className="mb-2">
             <ThemeToggle />
           </div>
