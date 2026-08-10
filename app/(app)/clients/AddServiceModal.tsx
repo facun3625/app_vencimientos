@@ -74,6 +74,7 @@ export default function AddServiceModal({
           serviceBases={filteredBases}
           monthlyCosts={monthlyCosts}
           defaultClientId={client.id}
+          onCancel={onClose}
         />
       </div>
     </div>,

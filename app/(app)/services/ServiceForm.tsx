@@ -1,14 +1,15 @@
 "use client";
 import { useTransition, useState } from "react";
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { createContractAction, createOneTimeAction } from "./actions";
 import { Save, X, Briefcase, DollarSign, Calendar, RefreshCcw, Plus, Trash2, Info, CheckCircle2, FileText, Send } from "lucide-react";
 import ClientCombobox from "./ClientCombobox";
 import ServiceBaseCombobox from "./ServiceBaseCombobox";
 
-export default function ServiceForm({ type, clients, serviceBases, monthlyCosts = [], defaultClientId }: any) {
+export default function ServiceForm({ type, clients, serviceBases, monthlyCosts = [], defaultClientId, onCancel }: any) {
   const [error, setError] = useState("");
   const [isPending, startTransition] = useTransition();
+  const router = useRouter();
   const [serviceBaseList, setServiceBaseList] = useState(serviceBases);
   const [rows, setRows] = useState([{ id: Date.now(), serviceBaseId: "", cost: 0, price: 0, notes: "", monthlyCostIds: [] as string[] }]);
 
@@ -273,9 +274,9 @@ export default function ServiceForm({ type, clients, serviceBases, monthlyCosts 
       </div>
 
       <div className="flex gap-3 pt-4 border-t border-white/5 items-center justify-end">
-        <Link href="/services" className="btn btn-secondary px-8">
+        <button type="button" onClick={() => (onCancel ? onCancel() : router.back())} className="btn btn-secondary px-8">
           <X size={18} /> Cancelar
-        </Link>
+        </button>
         <button disabled={isPending} className="btn btn-primary px-10 py-3 shadow-xl shadow-blue-500/20">
           <Save size={18} />
           {isPending ? "Procesando..." : `Asignar ${rows.length} Servicio(s)`}

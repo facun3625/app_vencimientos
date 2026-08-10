@@ -1,12 +1,13 @@
 "use client";
 import { useTransition, useState } from "react";
-import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { createClientAction, updateClientAction } from "./actions";
 import { Save, X, User, Mail, Phone, Building, Globe, ShieldQuestion, Hash, StickyNote } from "lucide-react";
 
 export default function ClientForm({ client }: { client?: any }) {
   const [error, setError] = useState("");
   const [isPending, startTransition] = useTransition();
+  const router = useRouter();
   const isEdit = !!client;
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -104,9 +105,9 @@ export default function ClientForm({ client }: { client?: any }) {
           <Save size={18} />
           {isPending ? "Procesando..." : isEdit ? "Guardar Cambios" : "Crear Cliente"}
         </button>
-        <Link href="/clients" className="btn btn-secondary px-8">
+        <button type="button" onClick={() => router.back()} className="btn btn-secondary px-8">
           <X size={18} /> Cancelar
-        </Link>
+        </button>
       </div>
     </form>
   );
