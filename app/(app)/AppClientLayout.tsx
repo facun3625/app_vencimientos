@@ -84,7 +84,8 @@ export default function AppClientLayout({
             <Menu size={22} />
           </button>
           <div className="flex flex-col min-w-0">
-            <img src="/logo_fondo_oscuro.png" alt="Kairos" className="h-9 w-auto object-contain self-start" />
+            <img src="/logo_fondo_oscuro.png" alt="Kairos" className="logo-dark h-9 w-auto object-contain self-start" />
+            <img src="/logo.png" alt="Kairos" className="logo-light h-9 w-auto object-contain self-start" />
             <span className="font-medium text-xs text-[var(--text-muted)] truncate mt-0.5">{workspaceName}</span>
           </div>
         </div>

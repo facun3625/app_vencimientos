@@ -199,7 +199,7 @@ body {
   border: 1px solid var(--border);
   border-radius: 0.75rem;
   padding: 0.75rem 1rem;
-  color: white;
+  color: var(--text-main);
   font-size: 0.875rem;
   transition: border-color 0.2s;
 }
@@ -314,3 +314,92 @@ tr:hover td {
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
+
+/* ============================================================
+   MODO DÍA (light theme)
+   El usuario elige el tema desde la barra lateral; se guarda en
+   localStorage y se aplica poniendo data-theme="light" en <html>
+   (ver el script anti-flash en app/layout.tsx). El modo día se
+   limita a la app interna: TODO se scopea bajo `.app-shell`, así
+   la landing pública sigue siendo oscura por diseño.
+
+   Se apoya en dos cosas:
+   1) Dar vuelta las variables de color (las tocan .card, .btn,
+      tablas, forms, sidebar, badges — todo el chrome base).
+   2) Una capa de compatibilidad que reasigna los colores oscuros
+      hardcodeados en los componentes (text-white, bg-white/N,
+      border-white/N y algunos hex) a sus equivalentes claros, sin
+      tener que editar decenas de archivos. Estas reglas van sin
+      @layer, así que ganan siempre a las utilidades de Tailwind.
+   ============================================================ */
+
+[data-theme="light"] body {
+  background-color: #f1f5f9;
+}
+
+[data-theme="light"] .app-shell {
+  --bg-dark: #f1f5f9;
+  --bg-card: #ffffff;
+  --border: rgba(15, 23, 42, 0.10);
+  --border-hover: rgba(59, 130, 246, 0.40);
+  --text-main: #0f172a;
+  --text-muted: #64748b;
+  background-color: #f1f5f9;
+}
+
+/* Texto (text-white y sus opacidades) -> slate oscuro proporcional */
+[data-theme="light"] .app-shell .text-white { color: #0f172a; }
+[data-theme="light"] .app-shell .text-white\/90 { color: rgba(15, 23, 42, 0.92); }
+[data-theme="light"] .app-shell .text-white\/80 { color: rgba(15, 23, 42, 0.82); }
+[data-theme="light"] .app-shell .text-white\/70 { color: rgba(15, 23, 42, 0.70); }
+[data-theme="light"] .app-shell .text-white\/50 { color: rgba(15, 23, 42, 0.55); }
+[data-theme="light"] .app-shell .text-white\/40 { color: rgba(15, 23, 42, 0.45); }
+[data-theme="light"] .app-shell .text-white\/30 { color: rgba(15, 23, 42, 0.38); }
+[data-theme="light"] .app-shell .text-white\/20 { color: rgba(15, 23, 42, 0.30); }
+
+/* Excepción: sobre fondos de color saturado (banners, badges, botón azul) el
+   texto debe seguir siendo blanco. Estos selectores son más específicos que la
+   regla .text-white de arriba, así que ganan. */
+[data-theme="light"] .app-shell .bg-blue-500.text-white,
+[data-theme="light"] .app-shell .bg-blue-600.text-white,
+[data-theme="light"] .app-shell .bg-purple-600.text-white,
+[data-theme="light"] .app-shell .bg-emerald-500.text-white,
+[data-theme="light"] .app-shell .bg-emerald-600.text-white,
+[data-theme="light"] .app-shell .bg-red-500.text-white,
+[data-theme="light"] .app-shell .bg-gradient-blue.text-white { color: #ffffff; }
+
+/* Superficies sutiles (bg-white/N) -> tinte oscuro sutil */
+[data-theme="light"] .app-shell .bg-white\/5  { background-color: rgba(15, 23, 42, 0.04); }
+[data-theme="light"] .app-shell .bg-white\/10 { background-color: rgba(15, 23, 42, 0.06); }
+[data-theme="light"] .app-shell .bg-white\/20 { background-color: rgba(15, 23, 42, 0.10); }
+[data-theme="light"] .app-shell .bg-white\/90 { background-color: #e2e8f0; }
+
+/* Bordes (border-white/N) -> borde oscuro sutil */
+[data-theme="light"] .app-shell .border-white\/5  { border-color: rgba(15, 23, 42, 0.08); }
+[data-theme="light"] .app-shell .border-white\/10 { border-color: rgba(15, 23, 42, 0.10); }
+[data-theme="light"] .app-shell .border-white\/20 { border-color: rgba(15, 23, 42, 0.14); }
+[data-theme="light"] .app-shell .border-white\/25 { border-color: rgba(15, 23, 42, 0.16); }
+[data-theme="light"] .app-shell .border-white\/30 { border-color: rgba(15, 23, 42, 0.18); }
+
+/* Fondos oscuros hardcodeados (sidebar, headers, cards) -> superficies claras */
+[data-theme="light"] .app-shell .bg-\[\#030712\],
+[data-theme="light"] .app-shell .bg-\[\#030712\]\/90,
+[data-theme="light"] .app-shell .bg-\[\#030712\]\/95,
+[data-theme="light"] .app-shell .bg-\[\#030712\]\/98 { background-color: #ffffff; }
+[data-theme="light"] .app-shell .bg-\[\#0a0f1d\],
+[data-theme="light"] .app-shell .bg-\[\#0b1220\] { background-color: #f8fafc; }
+[data-theme="light"] .app-shell .bg-\[\#111827\] { background-color: #e2e8f0; }
+
+/* Tintes negros (ej: footer de la sidebar) -> apenas visibles */
+[data-theme="light"] .app-shell .bg-black\/20 { background-color: rgba(15, 23, 42, 0.03); }
+
+/* Ajustes puntuales de componentes en claro */
+[data-theme="light"] .app-shell .form-input { background: #ffffff; }
+[data-theme="light"] .app-shell .form-input::placeholder { color: rgba(15, 23, 42, 0.40); }
+[data-theme="light"] .app-shell .btn-secondary:hover { background-color: rgba(15, 23, 42, 0.06); }
+[data-theme="light"] .app-shell tr:hover td { background: rgba(15, 23, 42, 0.03); }
+
+/* Logo: versión clara u oscura según el tema */
+.logo-light { display: none; }
+[data-theme="light"] .app-shell .logo-dark { display: none; }
+[data-theme="light"] .app-shell .logo-light { display: block; }
