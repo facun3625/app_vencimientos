@@ -1,11 +1,22 @@
 import Link from "next/link";
 import { Check, Minus, Star } from "lucide-react";
-import type { Plan } from "@prisma/client";
+import type { Plan, PlanTier } from "@prisma/client";
+import PlanCta from "./PlanCta";
 
 // Shared between the standalone /precios page and its @modal intercept, so
 // "Ver todos los planes" / "Ver detalle" from the landing page can open this
 // same comparison inline instead of navigating away.
-export default function PlanCards({ plans, compact }: { plans: Plan[]; compact?: boolean }) {
+export default function PlanCards({
+  plans,
+  compact,
+  loggedIn = false,
+  currentTier,
+}: {
+  plans: Plan[];
+  compact?: boolean;
+  loggedIn?: boolean;
+  currentTier?: PlanTier;
+}) {
   return (
     <div className={compact ? "" : "max-w-6xl mx-auto px-6 py-16"}>
       <div className="text-center max-w-xl mx-auto mb-14">
@@ -46,12 +57,13 @@ export default function PlanCards({ plans, compact }: { plans: Plan[]; compact?:
                 )}
               </div>
 
-              <Link
-                href={`/register?plan=${plan.tier.toLowerCase()}`}
-                className={`w-full justify-center mt-6 btn ${plan.featured ? "btn-primary" : "btn-secondary"}`}
-              >
-                Elegir {plan.name}
-              </Link>
+              <PlanCta
+                tier={plan.tier}
+                name={plan.name}
+                featured={plan.featured}
+                loggedIn={loggedIn}
+                currentTier={currentTier}
+              />
 
               <hr className="border-white/5 my-7" />
 

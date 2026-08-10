@@ -30,15 +30,27 @@ export async function POST(req: NextRequest) {
     const workspaceId: string | undefined = subscription.external_reference;
     if (!workspaceId) return NextResponse.json({ ok: true });
 
-    await prisma.workspace.update({
-      where: { id: workspaceId },
-      data: {
-        subscriptionStatus: STATUS_MAP[subscription.status] || "TRIALING",
-        mpSubscriptionId: preapprovalId,
-        mpPayerEmail: subscription.payer_email,
-        currentPeriodEnd: subscription.next_payment_date ? new Date(subscription.next_payment_date) : undefined,
-      },
-    });
+    const workspace = await prisma.workspace.findUnique({ where: { id: workspaceId } });
+    if (!workspace) return NextResponse.json({ ok: true });
+
+    const newStatus = STATUS_MAP[subscription.status] || "TRIALING";
+
+    const data: any = {
+      subscriptionStatus: newStatus,
+      mpSubscriptionId: preapprovalId,
+      mpPayerEmail: subscription.payer_email,
+      currentPeriodEnd: subscription.next_payment_date ? new Date(subscription.next_payment_date) : undefined,
+    };
+
+    // Payment authorized: promote the plan the user actually paid for. Covers
+    // both in-app upgrades (pendingPlanTier set) and, harmlessly, signups where
+    // planTier was already the chosen one and pendingPlanTier is null.
+    if (newStatus === "ACTIVE" && workspace.pendingPlanTier) {
+      data.planTier = workspace.pendingPlanTier;
+      data.pendingPlanTier = null;
+    }
+
+    await prisma.workspace.update({ where: { id: workspaceId }, data });
   } catch (err) {
     console.error("Error procesando webhook de Mercado Pago:", err);
     // Still ack with 200 so Mercado Pago doesn't hammer retries for an error

@@ -36,6 +36,11 @@ model Workspace {
   suggestions  Suggestion[]
 
   planTier           PlanTier           @default(STARTER)
+  // Plan the workspace is paying for but hasn't been confirmed yet. On an
+  // upgrade to a paid plan we keep the current planTier live and only promote
+  // pendingPlanTier -> planTier once Mercado Pago authorizes the payment (via
+  // the webhook), so nobody gets a paid plan without paying for it.
+  pendingPlanTier    PlanTier?
   subscriptionStatus SubscriptionStatus @default(NONE)
   mpSubscriptionId   String?
   mpPayerEmail       String?
