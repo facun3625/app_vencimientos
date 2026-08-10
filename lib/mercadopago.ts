@@ -30,6 +30,14 @@ export async function createSubscriptionCheckout({
 }) {
   const settings = await getMpSettings();
 
+  // Mercado Pago's Preapproval API only accepts "days" or "months" as
+  // frequency_type — there is no "years". A yearly plan is therefore expressed
+  // as every 12 months.
+  const autoRecurring =
+    frequency === "yearly"
+      ? { frequency: 12, frequency_type: "months" }
+      : { frequency: 1, frequency_type: "months" };
+
   const res = await fetch("https://api.mercadopago.com/preapproval", {
     method: "POST",
     headers: {
@@ -42,8 +50,7 @@ export async function createSubscriptionCheckout({
       payer_email: payerEmail,
       back_url: backUrl,
       auto_recurring: {
-        frequency: 1,
-        frequency_type: frequency === "monthly" ? "months" : "years",
+        ...autoRecurring,
         transaction_amount: price,
         currency_id: currency,
       },
