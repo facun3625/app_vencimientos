@@ -1,7 +1,7 @@
 import { auth } from "@/lib/auth";
 import { redirect } from "next/navigation";
-import Link from "next/link";
-import { Users, Mail, ArrowLeft, ShieldCheck, Tag, CreditCard, FlaskConical, MessageSquare } from "lucide-react";
+import { ShieldCheck } from "lucide-react";
+import AdminNav from "./AdminNav";
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {
   const session = await auth();
@@ -23,29 +23,7 @@ export default async function AdminLayout({ children }: { children: React.ReactN
             </div>
           </div>
 
-          <div className="flex items-center gap-2">
-            <Link href="/admin/users" className="btn btn-secondary !py-2 !px-4 text-sm">
-              <Users size={14} /> Usuarios
-            </Link>
-            <Link href="/admin/plans" className="btn btn-secondary !py-2 !px-4 text-sm">
-              <Tag size={14} /> Planes
-            </Link>
-            <Link href="/admin/mercadopago" className="btn btn-secondary !py-2 !px-4 text-sm">
-              <CreditCard size={14} /> Mercado Pago
-            </Link>
-            <Link href="/admin/demo" className="btn btn-secondary !py-2 !px-4 text-sm">
-              <FlaskConical size={14} /> Demo
-            </Link>
-            <Link href="/admin/smtp" className="btn btn-secondary !py-2 !px-4 text-sm">
-              <Mail size={14} /> SMTP
-            </Link>
-            <Link href="/admin/suggestions" className="btn btn-secondary !py-2 !px-4 text-sm">
-              <MessageSquare size={14} /> Sugerencias
-            </Link>
-            <Link href="/dashboard" className="btn btn-secondary !py-2 !px-4 text-sm">
-              <ArrowLeft size={14} /> Volver a la app
-            </Link>
-          </div>
+          <AdminNav />
         </div>
       </div>
 
