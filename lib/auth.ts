@@ -9,6 +9,9 @@ import { cookies } from "next/headers";
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
   adapter: PrismaAdapter(prisma),
+  // Self-hosted detrás de nginx: hay que confiar en los headers del proxy
+  // (X-Forwarded-Host/Proto) para que Auth.js arme bien las URLs de callback.
+  trustHost: true,
   session: { strategy: "jwt" },
   pages: { signIn: "/login" },
   callbacks: {
