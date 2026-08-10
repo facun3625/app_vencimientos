@@ -345,6 +345,11 @@ tr:hover td {
   --text-main: #0f172a;
   --text-muted: #64748b;
   background-color: #f1f5f9;
+  /* El color de texto base lo define <body> (fuera de .app-shell), que sigue
+     usando el valor oscuro. Sin esto, todo el texto sin color propio (ej.
+     .stat-value) hereda el gris casi blanco del modo noche y queda invisible
+     sobre el fondo claro. */
+  color: var(--text-main);
 }
 
 /* Texto (text-white y sus opacidades) -> slate oscuro proporcional */
@@ -357,16 +362,26 @@ tr:hover td {
 [data-theme="light"] .app-shell .text-white\/30 { color: rgba(15, 23, 42, 0.38); }
 [data-theme="light"] .app-shell .text-white\/20 { color: rgba(15, 23, 42, 0.30); }
 
-/* Excepción: sobre fondos de color saturado (banners, badges, botón azul) el
-   texto debe seguir siendo blanco. Estos selectores son más específicos que la
-   regla .text-white de arriba, así que ganan. */
+/* Excepción: sobre fondos de color saturado (banners, badges, botón azul,
+   círculos con ícono) el texto/ícono debe seguir siendo blanco. Cubrimos el
+   mismo elemento (bg + text-white juntos) y los descendientes (ícono dentro de
+   un círculo de color). Son más específicos que la regla .text-white de arriba.
+   Nota: los tintes suaves (bg-blue-500/10, etc.) son clases distintas y NO
+   entran acá, así que ahí el texto sí se oscurece como corresponde. */
 [data-theme="light"] .app-shell .bg-blue-500.text-white,
 [data-theme="light"] .app-shell .bg-blue-600.text-white,
 [data-theme="light"] .app-shell .bg-purple-600.text-white,
 [data-theme="light"] .app-shell .bg-emerald-500.text-white,
 [data-theme="light"] .app-shell .bg-emerald-600.text-white,
 [data-theme="light"] .app-shell .bg-red-500.text-white,
-[data-theme="light"] .app-shell .bg-gradient-blue.text-white { color: #ffffff; }
+[data-theme="light"] .app-shell .bg-gradient-blue.text-white,
+[data-theme="light"] .app-shell .bg-blue-500 .text-white,
+[data-theme="light"] .app-shell .bg-blue-600 .text-white,
+[data-theme="light"] .app-shell .bg-purple-600 .text-white,
+[data-theme="light"] .app-shell .bg-emerald-500 .text-white,
+[data-theme="light"] .app-shell .bg-emerald-600 .text-white,
+[data-theme="light"] .app-shell .bg-red-500 .text-white,
+[data-theme="light"] .app-shell .bg-gradient-blue .text-white { color: #ffffff; }
 
 /* Superficies sutiles (bg-white/N) -> tinte oscuro sutil */
 [data-theme="light"] .app-shell .bg-white\/5  { background-color: rgba(15, 23, 42, 0.04); }
