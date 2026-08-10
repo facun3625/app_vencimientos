@@ -82,7 +82,7 @@ export default async function SubscriptionPage() {
         </div>
 
         <div className="flex flex-wrap gap-3">
-          <Link href="/precios" className="btn btn-primary">
+          <Link href="/subscription/plans" className="btn btn-primary">
             <ArrowUpRight size={14} /> Cambiar de plan
           </Link>
           {workspace.mpSubscriptionId && workspace.subscriptionStatus === "ACTIVE" && (

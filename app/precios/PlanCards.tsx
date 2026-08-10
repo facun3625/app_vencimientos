@@ -11,21 +11,25 @@ export default function PlanCards({
   compact,
   loggedIn = false,
   currentTier,
+  hideHeader = false,
 }: {
   plans: Plan[];
   compact?: boolean;
   loggedIn?: boolean;
   currentTier?: PlanTier;
+  hideHeader?: boolean;
 }) {
   return (
     <div className={compact ? "" : "max-w-6xl mx-auto px-6 py-16"}>
-      <div className="text-center max-w-xl mx-auto mb-14">
-        <p className="text-xs font-bold uppercase tracking-widest text-[var(--primary)] mb-3">Planes</p>
-        <h1 className="text-4xl font-extrabold tracking-tight">Elegí el plan según el tamaño de tu operación</h1>
-        <p className="text-[var(--text-muted)] mt-4">
-          Cambiás de plan cuando quieras desde tu cuenta. Sin permanencia.
-        </p>
-      </div>
+      {!hideHeader && (
+        <div className="text-center max-w-xl mx-auto mb-14">
+          <p className="text-xs font-bold uppercase tracking-widest text-[var(--primary)] mb-3">Planes</p>
+          <h1 className="text-4xl font-extrabold tracking-tight">Elegí el plan según el tamaño de tu operación</h1>
+          <p className="text-[var(--text-muted)] mt-4">
+            Cambiás de plan cuando quieras desde tu cuenta. Sin permanencia.
+          </p>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         {plans.map((plan) => {

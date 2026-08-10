@@ -19,13 +19,13 @@ export default async function CheckoutPage({
 
   const params = await searchParams;
   const tier = (params.plan || "").toUpperCase();
-  if (!TIERS.includes(tier as Tier)) redirect("/precios");
+  if (!TIERS.includes(tier as Tier)) redirect("/subscription/plans");
 
   const [plan, workspace] = await Promise.all([
     prisma.plan.findUnique({ where: { tier: tier as Tier } }),
     prisma.workspace.findUnique({ where: { id: user.workspaceId } }),
   ]);
-  if (!plan || !workspace) redirect("/precios");
+  if (!plan || !workspace) redirect("/subscription/plans");
 
   // Already on this exact plan — nothing to check out.
   if (workspace.planTier === plan.tier && workspace.subscriptionStatus === "ACTIVE") {
@@ -48,7 +48,7 @@ export default async function CheckoutPage({
     <div className="page-container">
       <div className="max-w-lg mx-auto">
         <Link
-          href="/precios"
+          href="/subscription/plans"
           className="inline-flex items-center gap-1.5 text-sm text-[var(--text-muted)] hover:text-white mb-6 transition-colors"
         >
           <ArrowLeft size={15} /> Volver a los planes
