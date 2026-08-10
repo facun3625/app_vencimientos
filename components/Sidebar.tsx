@@ -83,8 +83,7 @@ export default function Sidebar({
         <div className="flex-1 overflow-y-auto p-4">
           <div className="flex items-start justify-between mb-5">
             <div className="min-w-0">
-              <img src="/logo_fondo_oscuro.png" alt="Kairos" className="logo-dark h-8 w-auto object-contain mb-2" />
-              <img src="/logo.png" alt="Kairos" className="logo-light h-8 w-auto object-contain mb-2" />
+              <img src="/logo_fondo_oscuro.png" alt="Kairos" className="app-logo h-8 w-auto object-contain mb-2" />
               <p className="text-[11px] text-[var(--text-muted)] truncate">{workspaceName}</p>
             </div>
             {/* Close button for mobile */}

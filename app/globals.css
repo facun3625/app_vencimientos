@@ -414,7 +414,11 @@ tr:hover td {
 [data-theme="light"] .app-shell .btn-secondary:hover { background-color: rgba(15, 23, 42, 0.06); }
 [data-theme="light"] .app-shell tr:hover td { background: rgba(15, 23, 42, 0.03); }
 
-/* Logo: versión clara u oscura según el tema */
-.logo-light { display: none; }
-[data-theme="light"] .app-shell .logo-dark { display: none; }
-[data-theme="light"] .app-shell .logo-light { display: block; }
+/* Logo de Kairos: usamos el mismo (texto blanco) en ambos temas. En modo día
+   el sidebar es claro, así que le ponemos un fondo oscuro detrás — el PNG es
+   transparente, así que el fondo se ve a través del texto y queda legible. */
+[data-theme="light"] .app-shell .app-logo {
+  background: #0b1220;
+  padding: 6px 10px;
+  border-radius: 10px;
+}
