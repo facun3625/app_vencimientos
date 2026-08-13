@@ -14,7 +14,7 @@ type SvcRow = {
   clients: ClientLine[];
 };
 
-const money = (n: number) => `$${Math.round(n).toLocaleString("es-AR")}`;
+const money = (n: number, sym = "$") => `${sym}${Math.round(n).toLocaleString("es-AR")}`;
 
 function Ranking({
   title,
@@ -75,7 +75,7 @@ function Ranking({
   );
 }
 
-function ClientsModal({ svc, onClose }: { svc: SvcRow; onClose: () => void }) {
+function ClientsModal({ svc, onClose, symbol = "$" }: { svc: SvcRow; onClose: () => void; symbol?: string }) {
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
   useEffect(() => {
@@ -105,7 +105,7 @@ function ClientsModal({ svc, onClose }: { svc: SvcRow; onClose: () => void }) {
           </button>
         </div>
         <p className="text-xs text-[var(--text-muted)] mb-5">
-          {total} {total === 1 ? "asignación" : "asignaciones"} · {money(svc.revenue)} en ingresos
+          {total} {total === 1 ? "asignación" : "asignaciones"} · {money(svc.revenue, symbol)} en ingresos
         </p>
 
         {svc.clients.length === 0 ? (
@@ -119,7 +119,7 @@ function ClientsModal({ svc, onClose }: { svc: SvcRow; onClose: () => void }) {
                   <span className="truncate">{c.name}</span>
                   {c.count > 1 && <span className="text-[var(--text-muted)] text-xs shrink-0">×{c.count}</span>}
                 </span>
-                <span className="font-mono text-emerald-400 shrink-0">{money(c.revenue)}</span>
+                <span className="font-mono text-emerald-400 shrink-0">{money(c.revenue, symbol)}</span>
               </div>
             ))}
           </div>
@@ -134,10 +134,12 @@ export default function ByServiceStats({
   byRevenue,
   byCount,
   periodLabel,
+  symbol = "$",
 }: {
   byRevenue: SvcRow[];
   byCount: SvcRow[];
   periodLabel: string;
+  symbol?: string;
 }) {
   const [selected, setSelected] = useState<SvcRow | null>(null);
 
@@ -159,7 +161,7 @@ export default function ByServiceStats({
           rows={byRevenue}
           barClass="bg-emerald-500/60"
           onSelect={setSelected}
-          metric={(s) => ({ value: s.revenue, label: <span className="text-emerald-400">{money(s.revenue)}</span> })}
+          metric={(s) => ({ value: s.revenue, label: <span className="text-emerald-400">{money(s.revenue, symbol)}</span> })}
         />
         <Ranking
           title="Los que más usás"
@@ -183,7 +185,7 @@ export default function ByServiceStats({
         />
       </div>
 
-      {selected && <ClientsModal svc={selected} onClose={() => setSelected(null)} />}
+      {selected && <ClientsModal svc={selected} onClose={() => setSelected(null)} symbol={symbol} />}
     </>
   );
 }

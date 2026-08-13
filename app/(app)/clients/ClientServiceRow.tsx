@@ -3,6 +3,7 @@ import { useEffect, useState, useTransition } from "react";
 import { Calendar, CheckCircle2, DollarSign, Pencil, RefreshCcw, Save, X, FileText, Send } from "lucide-react";
 import { updateContractAction, updateOneTimeAction } from "../services/actions";
 import PaidToggle from "../services/PaidToggle";
+import { formatMoney } from "@/lib/money";
 import DeleteServiceButton from "../services/DeleteServiceButton";
 
 const toDateInput = (v: any) => (v ? new Date(v).toISOString().split("T")[0] : "");
@@ -270,7 +271,7 @@ export default function ClientServiceRow({
         </div>
         <div className="text-right">
           <p className="text-[9px] uppercase tracking-wider text-[var(--text-muted)] font-bold">Monto</p>
-          <p className="text-sm font-black text-emerald-400 font-mono">${service.price}</p>
+          <p className="text-sm font-black text-emerald-400 font-mono">{formatMoney(service.price, service.currency)}</p>
         </div>
         {service.invoiced && (
           <span className="flex items-center gap-1 px-2 py-1 rounded-full text-[10px] uppercase font-bold tracking-tighter bg-blue-500/10 text-blue-400" title="Facturado">

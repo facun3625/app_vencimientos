@@ -7,6 +7,7 @@ import { format, addMonths, subMonths } from "date-fns";
 import { es } from "date-fns/locale";
 import ServiceGroupCard from "./ServiceGroupCard";
 import { ensureCurrentOrders } from "@/lib/billing";
+import { sumByCurrency, formatByCurrency } from "@/lib/money";
 
 const FREQ: Record<string, string> = { MONTHLY: "Mensual", QUARTERLY: "Trimestral", BIANNUAL: "Semestral", ANNUAL: "Anual" };
 
@@ -80,9 +81,9 @@ export default async function ServicesPage({ searchParams }: { searchParams: Pro
    .filter(s => sentFilter === "all" || (sentFilter === "sent" ? s.invoiceSent : !s.invoiceSent))
    .sort((a, b) => new Date(b.displayDate).getTime() - new Date(a.displayDate).getTime());
 
-  const monthTotal = allServices.reduce((sum, s) => sum + Number(s.price), 0);
-  const monthPaid = allServices.filter(s => s.isPaid).reduce((sum, s) => sum + Number(s.price), 0);
-  const monthPending = monthTotal - monthPaid;
+  const monthByCurrency = sumByCurrency(allServices, s => Number(s.price), s => (s as any).currency);
+  const paidByCurrency = sumByCurrency(allServices.filter(s => s.isPaid), s => Number(s.price), s => (s as any).currency);
+  const pendingByCurrency = sumByCurrency(allServices.filter(s => !s.isPaid), s => Number(s.price), s => (s as any).currency);
   const recurringCount = allServices.filter(s => s.viewType === "RECURRING").length;
   const onetimeCount = allServices.filter(s => s.viewType === "ONE_TIME").length;
 
@@ -107,7 +108,8 @@ export default async function ServicesPage({ searchParams }: { searchParams: Pro
       group.displayDateLabel = format(new Date(s.displayDate), "dd MMM");
     }
     group.services.push(s);
-    group.total += Number(s.price);
+    group.totalsByCurrency = group.totalsByCurrency || {};
+    group.totalsByCurrency[(s as any).currency || "ARS"] = (group.totalsByCurrency[(s as any).currency || "ARS"] || 0) + Number(s.price);
   });
 
   return (
@@ -203,17 +205,17 @@ export default async function ServicesPage({ searchParams }: { searchParams: Pro
         <div className="flex items-center gap-2 text-sm">
           <Clock size={14} className="text-amber-500" />
           <span className="text-[var(--text-muted)]">Pendiente:</span>
-          <span className="text-amber-500 font-black font-mono">${monthPending}</span>
+          <span className="text-amber-500 font-black font-mono">{formatByCurrency(pendingByCurrency)}</span>
         </div>
         <div className="flex items-center gap-2 text-sm">
           <CheckCircle2 size={14} className="text-emerald-400" />
           <span className="text-[var(--text-muted)]">Cobrado:</span>
-          <span className="text-emerald-400 font-black font-mono">${monthPaid}</span>
+          <span className="text-emerald-400 font-black font-mono">{formatByCurrency(paidByCurrency)}</span>
         </div>
         <div className="flex items-center gap-2 text-sm ml-auto">
           <Wallet size={14} className="text-white" />
           <span className="text-[var(--text-muted)]">Total del mes a cobrar:</span>
-          <span className="text-white font-black font-mono text-base">${monthTotal}</span>
+          <span className="text-white font-black font-mono text-base">{formatByCurrency(monthByCurrency)}</span>
         </div>
       </div>
 

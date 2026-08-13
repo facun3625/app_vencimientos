@@ -2,6 +2,7 @@
 import { useState, useTransition, useEffect } from "react";
 import { Repeat, Zap, Pencil, Calendar, RefreshCcw, DollarSign, CheckCircle2, X, Save, FileText, Send } from "lucide-react";
 import { updateContractAction, updateOneTimeAction } from "./actions";
+import { formatMoney } from "@/lib/money";
 import PaidToggle from "./PaidToggle";
 import DeleteServiceButton from "./DeleteServiceButton";
 
@@ -233,7 +234,7 @@ export default function ServiceRow({ service, serviceBases, monthlyCosts = [] }:
       </div>
 
       <div className="flex items-center gap-4">
-        <span className="font-bold text-white font-mono text-sm">${service.price}</span>
+        <span className="font-bold text-white font-mono text-sm">{formatMoney(service.price, service.currency)}</span>
         {service.invoiced && (
           <span className="flex items-center gap-1 px-2 py-1 rounded-full text-[10px] uppercase font-bold tracking-tighter bg-blue-500/10 text-blue-400" title="Facturado">
             <FileText size={11} /> Facturado

@@ -4,6 +4,7 @@ import { ChevronDown, ChevronRight, Calendar, Plus, CheckCircle2, Clock, Send } 
 import Link from "next/link";
 import ServiceRow from "./ServiceRow";
 import { toggleGroupPaidAction, togglePaidAction, toggleInvoiceSentAction } from "./actions";
+import { formatByCurrency } from "@/lib/money";
 
 export default function ServiceGroupCard({ group, serviceBases, monthlyCosts = [] }: { group: any; serviceBases: any[]; monthlyCosts?: any[] }) {
   const [open, setOpen] = useState(false);
@@ -89,7 +90,7 @@ export default function ServiceGroupCard({ group, serviceBases, monthlyCosts = [
           </div>
           <div className="text-right">
             <p className="text-[9px] uppercase tracking-wider text-[var(--text-muted)] font-bold">Total</p>
-            <p className="text-lg font-black text-emerald-400 font-mono">${group.total}</p>
+            <p className="text-lg font-black text-emerald-400 font-mono">{formatByCurrency(group.totalsByCurrency)}</p>
           </div>
           {group.services.length > 1 && (
             <button

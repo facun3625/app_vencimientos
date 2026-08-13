@@ -58,12 +58,17 @@ const FREQUENCY_TO_MONTHS: Record<string, number> = { MONTHLY: 1, QUARTERLY: 3, 
 export default async function StatisticsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ tab?: string; granularity?: string; period?: string; mode?: string }>;
+  searchParams: Promise<{ tab?: string; granularity?: string; period?: string; mode?: string; currency?: string }>;
 }) {
   const session = await auth();
   if (!session) redirect("/login");
   const workspaceId = (session.user as any).workspaceId;
   const params = await searchParams;
+  // Los reportes no mezclan monedas: se ve una a la vez (ARS por defecto). Cada
+  // total usa la misma lógica de siempre, pero sobre datos de esa sola moneda.
+  const currency = params.currency === "USD" ? "USD" : "ARS";
+  const sym = currency === "USD" ? "US$" : "$";
+  const isARS = currency === "ARS";
   const tab =
     params.tab === "onetime" ? "onetime"
     : params.tab === "summary" ? "summary"
@@ -101,8 +106,8 @@ export default async function StatisticsPage({
   }
   const period = params.period || currentPeriod;
 
-  const buildHref = (overrides: { tab?: string; granularity?: string; period?: string; mode?: string }) => {
-    const q = new URLSearchParams({ tab, granularity, period, mode, ...overrides });
+  const buildHref = (overrides: { tab?: string; granularity?: string; period?: string; mode?: string; currency?: string }) => {
+    const q = new URLSearchParams({ tab, granularity, period, mode, currency, ...overrides });
     return `/statistics?${q.toString()}`;
   };
 
@@ -114,16 +119,17 @@ export default async function StatisticsPage({
     // period and their (prorated) cost — cost accrues every month regardless of
     // when a given contract happens to bill, unlike revenue.
     prisma.serviceContract.findMany({
-      where: { client: { workspaceId }, status: "ACTIVE" },
+      where: { client: { workspaceId }, status: "ACTIVE", currency },
       include: { monthlyCosts: true, serviceBase: true, client: true },
     }),
     prisma.contractPayment.findMany({
-      where: { contract: { client: { workspaceId } }, dueDate: { gte: periodStart, lt: periodEnd } },
+      where: { contract: { client: { workspaceId } }, currency, dueDate: { gte: periodStart, lt: periodEnd } },
       include: { contract: { include: { serviceBase: true, client: true } } },
     }),
     prisma.oneTimeService.findMany({
       where: {
         client: { workspaceId },
+        currency,
         OR: [
           { deliveryDate: { gte: periodStart, lt: periodEnd } },
           { deliveryDate: null, createdAt: { gte: periodStart, lt: periodEnd } },
@@ -131,9 +137,11 @@ export default async function StatisticsPage({
       },
       include: { serviceBase: true, client: true },
     }),
-    prisma.monthlyExpense.findMany({
-      where: { workspaceId, month: { gte: periodStart, lt: periodEnd } },
-    }),
+    // Gastos y costos mensuales compartidos son SIEMPRE en pesos: en la vista
+    // USD no aplican (quedan en cero), así no se mezclan monedas.
+    isARS
+      ? prisma.monthlyExpense.findMany({ where: { workspaceId, month: { gte: periodStart, lt: periodEnd } } })
+      : Promise.resolve([] as any[]),
   ]);
 
   // Count how many active contracts share each MonthlyCost, to split it evenly
@@ -145,7 +153,8 @@ export default async function StatisticsPage({
   });
   const monthly = contracts.map(c => {
     const months = FREQUENCY_TO_MONTHS[c.frequency] ?? 1;
-    const sharedCost = c.monthlyCosts.reduce((sum, mc) => sum + mc.amount / costUsers[mc.id], 0);
+    // Los costos mensuales compartidos son en pesos: no se suman en la vista USD.
+    const sharedCost = isARS ? c.monthlyCosts.reduce((sum, mc) => sum + mc.amount / costUsers[mc.id], 0) : 0;
     return { ...c, monthlyPrice: c.price / months, monthlyCost: c.cost / months + sharedCost };
   });
 
@@ -341,6 +350,15 @@ export default async function StatisticsPage({
             Año
           </Link>
         </div>
+
+        <div className="flex gap-2 bg-white/5 p-1 rounded-xl border border-white/5" title="Los reportes se ven de a una moneda por vez (no se mezclan pesos y dólares)">
+          <Link href={buildHref({ currency: "ARS" })} className={`px-4 py-2 rounded-lg text-xs font-semibold transition-all ${currency === 'ARS' ? 'bg-white/10 text-white shadow-lg' : 'text-[var(--text-muted)] hover:text-white'}`}>
+            $ Pesos
+          </Link>
+          <Link href={buildHref({ currency: "USD" })} className={`px-4 py-2 rounded-lg text-xs font-semibold transition-all ${currency === 'USD' ? 'bg-white/10 text-white shadow-lg' : 'text-[var(--text-muted)] hover:text-white'}`}>
+            US$ Dólares
+          </Link>
+        </div>
       </div>
 
       <div className="flex flex-wrap items-center gap-4 mb-8">
@@ -386,7 +404,7 @@ export default async function StatisticsPage({
             <StatCard
               label="Ingreso Recurrente"
               tooltip="Suma los pagos de contratos recurrentes cuyo vencimiento cae en este período. En modo Proyectado se le suma lo que falta facturar si el contrato sigue activo."
-              value={`$${Math.round(periodRecurringRevenue).toLocaleString("es-AR")}`}
+              value={`${sym}${Math.round(periodRecurringRevenue).toLocaleString("es-AR")}`}
               icon={<TrendingUp size={14} />}
               accent="blue"
               footer={
@@ -398,7 +416,7 @@ export default async function StatisticsPage({
             <StatCard
               label="Costos Totales"
               tooltip="Costo de cada contrato activo prorrateado a este período, más su parte de los Costos Mensuales compartidos. Se cuenta todos los meses, aunque el contrato no venza justo ahora."
-              value={`$${Math.round(periodRecurringCost).toLocaleString("es-AR")}`}
+              value={`${sym}${Math.round(periodRecurringCost).toLocaleString("es-AR")}`}
               icon={<DollarSign size={14} />}
               accent="red"
               footer={
@@ -410,7 +428,7 @@ export default async function StatisticsPage({
             <StatCard
               label="Utilidad Neta"
               tooltip="Ingreso Recurrente menos Costos Totales de este período."
-              value={`$${Math.round(periodRecurringMargin).toLocaleString("es-AR")}`}
+              value={`${sym}${Math.round(periodRecurringMargin).toLocaleString("es-AR")}`}
               icon={<ChevronUp size={14} />}
               accent="emerald"
               valueClass="text-emerald-400"
@@ -423,7 +441,7 @@ export default async function StatisticsPage({
             <StatCard
               label="Ticket (Por Servicio)"
               tooltip="Ingreso Recurrente dividido por la cantidad de servicios facturados (o activos, en modo Proyectado)."
-              value={`$${Math.round(periodRecurringTicket).toLocaleString("es-AR")}`}
+              value={`${sym}${Math.round(periodRecurringTicket).toLocaleString("es-AR")}`}
               icon={<Users size={14} />}
               accent="purple"
               footer={
@@ -436,7 +454,7 @@ export default async function StatisticsPage({
               <StatCard
                 label="Promedio Mensual"
                 tooltip="Ingreso, costo y utilidad del año, divididos por 12."
-                value={`$${Math.round(periodRecurringRevenue / 12).toLocaleString("es-AR")}`}
+                value={`${sym}${Math.round(periodRecurringRevenue / 12).toLocaleString("es-AR")}`}
                 icon={<Repeat size={14} />}
                 accent="blue"
                 footer={
@@ -465,7 +483,7 @@ export default async function StatisticsPage({
             <StatCard
               label="Ingreso Único"
               tooltip="Suma de todos los servicios únicos cargados en este período, estén cobrados o no."
-              value={`$${Math.round(periodOnceRevenue).toLocaleString("es-AR")}`}
+              value={`${sym}${Math.round(periodOnceRevenue).toLocaleString("es-AR")}`}
               icon={<TrendingUp size={14} />}
               accent="blue"
               footer={
@@ -477,7 +495,7 @@ export default async function StatisticsPage({
             <StatCard
               label="Pendiente de Cobro"
               tooltip="Parte del Ingreso Único que todavía no se marcó como cobrado. Ya está incluida en el Ingreso Único de arriba, no se suma aparte."
-              value={`$${Math.round(periodOncePending).toLocaleString("es-AR")}`}
+              value={`${sym}${Math.round(periodOncePending).toLocaleString("es-AR")}`}
               icon={<Clock size={14} />}
               accent={periodOncePending > 0 ? "amber" : "emerald"}
               valueClass={periodOncePending > 0 ? "text-amber-400" : "text-white"}
@@ -496,7 +514,7 @@ export default async function StatisticsPage({
             <StatCard
               label="Costos Totales"
               tooltip="Costo de todos los servicios únicos cargados en este período, cobrados o no."
-              value={`$${Math.round(periodOnceCost).toLocaleString("es-AR")}`}
+              value={`${sym}${Math.round(periodOnceCost).toLocaleString("es-AR")}`}
               icon={<DollarSign size={14} />}
               accent="red"
               footer={
@@ -508,7 +526,7 @@ export default async function StatisticsPage({
             <StatCard
               label="Utilidad Neta"
               tooltip="Ingreso Único menos Costos Totales de este período."
-              value={`$${Math.round(periodOnceMargin).toLocaleString("es-AR")}`}
+              value={`${sym}${Math.round(periodOnceMargin).toLocaleString("es-AR")}`}
               icon={<ChevronUp size={14} />}
               accent="emerald"
               valueClass="text-emerald-400"
@@ -522,7 +540,7 @@ export default async function StatisticsPage({
               <StatCard
                 label="Utilidad Promedio"
                 tooltip="Utilidad Neta del año dividida por 12."
-                value={`$${Math.round(periodOnceMargin / 12).toLocaleString("es-AR")}`}
+                value={`${sym}${Math.round(periodOnceMargin / 12).toLocaleString("es-AR")}`}
                 icon={<ChevronUp size={14} />}
                 accent="purple"
                 footer={
@@ -535,7 +553,7 @@ export default async function StatisticsPage({
               <StatCard
                 label="Ticket Promedio"
                 tooltip="Ingreso Único dividido por la cantidad de servicios cargados en el período."
-                value={`$${Math.round(periodOnceTicket).toLocaleString("es-AR")}`}
+                value={`${sym}${Math.round(periodOnceTicket).toLocaleString("es-AR")}`}
                 icon={<Users size={14} />}
                 accent="purple"
                 footer={
@@ -566,7 +584,7 @@ export default async function StatisticsPage({
             <StatCard
               label="Ingreso del Período"
               tooltip="Ingreso Recurrente más Ingreso Único de este período, sumados."
-              value={`$${Math.round(periodTotalRevenue).toLocaleString("es-AR")}`}
+              value={`${sym}${Math.round(periodTotalRevenue).toLocaleString("es-AR")}`}
               icon={<TrendingUp size={14} />}
               accent="blue"
               footer={
@@ -578,7 +596,7 @@ export default async function StatisticsPage({
             <StatCard
               label="Costos de Servicios"
               tooltip="Costos Totales de Recurrentes más Costos Totales de Únicos de este período."
-              value={`$${Math.round(periodTotalServiceCost).toLocaleString("es-AR")}`}
+              value={`${sym}${Math.round(periodTotalServiceCost).toLocaleString("es-AR")}`}
               icon={<DollarSign size={14} />}
               accent="red"
               footer={
@@ -590,7 +608,7 @@ export default async function StatisticsPage({
             <StatCard
               label="Gastos Generales"
               tooltip="Gastos operativos del negocio (luz, internet, herramientas) que no se le cargan a un cliente puntual — se cargan desde la sección Gastos."
-              value={`$${Math.round(periodExpensesTotal).toLocaleString("es-AR")}`}
+              value={`${sym}${Math.round(periodExpensesTotal).toLocaleString("es-AR")}`}
               icon={<Wallet size={14} />}
               accent="amber"
               valueClass="text-amber-400"
@@ -603,7 +621,7 @@ export default async function StatisticsPage({
             <StatCard
               label="Utilidad Bruta"
               tooltip="Ingreso del Período menos Costos de Servicios, antes de restar los Gastos Generales."
-              value={`$${Math.round(periodGrossProfit).toLocaleString("es-AR")}`}
+              value={`${sym}${Math.round(periodGrossProfit).toLocaleString("es-AR")}`}
               icon={<PieChart size={14} />}
               accent={periodGrossProfit >= 0 ? "emerald" : "red"}
               valueClass={periodGrossProfit >= 0 ? "text-emerald-400" : "text-red-400"}
@@ -617,7 +635,7 @@ export default async function StatisticsPage({
               <StatCard
                 label="Promedio Mensual"
                 tooltip="Resultado Neto del año dividido por 12."
-                value={`$${Math.round(periodNetResult / 12).toLocaleString("es-AR")}`}
+                value={`${sym}${Math.round(periodNetResult / 12).toLocaleString("es-AR")}`}
                 icon={periodNetResult >= 0 ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
                 accent={periodNetResult >= 0 ? "emerald" : "red"}
                 valueClass={periodNetResult >= 0 ? "text-emerald-400" : "text-red-400"}
@@ -631,7 +649,7 @@ export default async function StatisticsPage({
               <StatCard
                 label="Resultado Neto"
                 tooltip="Utilidad Bruta menos Gastos Generales de este período — lo que realmente queda."
-                value={`$${Math.round(periodNetResult).toLocaleString("es-AR")}`}
+                value={`${sym}${Math.round(periodNetResult).toLocaleString("es-AR")}`}
                 icon={periodNetResult >= 0 ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
                 accent={periodNetResult >= 0 ? "emerald" : "red"}
                 valueClass={periodNetResult >= 0 ? "text-emerald-400" : "text-red-400"}
@@ -648,7 +666,7 @@ export default async function StatisticsPage({
             <div className="card !p-4 mb-6 flex items-center gap-3 border-l-4 border-l-amber-500">
               <Clock size={16} className="text-amber-400 shrink-0" />
               <p className="text-sm text-[var(--text-muted)]">
-De los servicios únicos de este período, <span className="text-amber-400 font-bold">${Math.round(periodOncePending).toLocaleString("es-AR")}</span> todavía no se cobraron (ya está incluido en el resultado de arriba, es solo para que sepas a quién avisarle que pague).
+De los servicios únicos de este período, <span className="text-amber-400 font-bold">{sym}{Math.round(periodOncePending).toLocaleString("es-AR")}</span> todavía no se cobraron (ya está incluido en el resultado de arriba, es solo para que sepas a quién avisarle que pague).
               </p>
             </div>
           )}
@@ -660,7 +678,7 @@ De los servicios únicos de este período, <span className="text-amber-400 font-
       )}
 
       {tab === 'byservice' && (
-        <ByServiceStats byRevenue={svcByRevenue} byCount={svcByCount} periodLabel={periodLabel} />
+        <ByServiceStats byRevenue={svcByRevenue} byCount={svcByCount} periodLabel={periodLabel} symbol={sym} />
       )}
     </div>
   );
