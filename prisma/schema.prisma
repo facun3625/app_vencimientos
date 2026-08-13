@@ -187,6 +187,7 @@ model ServiceContract {
   provider       String?
   cost           Float       @default(0)
   price          Float
+  currency       String      @default("ARS")
   frequency      String
   startDate      DateTime    @default(now())
   autoRenew      Boolean     @default(false)
@@ -213,6 +214,7 @@ model ContractPayment {
   contract   ServiceContract @relation(fields: [contractId], references: [id], onDelete: Cascade)
   dueDate    DateTime
   amount     Float
+  currency   String          @default("ARS")
   isPaid       Boolean         @default(false)
   paidAt       DateTime?
   invoiced     Boolean         @default(false)
@@ -229,6 +231,7 @@ model OneTimeService {
   name          String?
   internalCost  Float       @default(0)
   finalPrice    Float
+  currency      String      @default("ARS")
   startDate     DateTime?
   deliveryDate  DateTime?
   isPaid        Boolean     @default(false)

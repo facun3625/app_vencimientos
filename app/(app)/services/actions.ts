@@ -10,6 +10,7 @@ import { redirect } from "next/navigation";
 const bulkContractSchema = z.object({
   clientId: z.string().min(1),
   frequency: z.enum(["MONTHLY", "QUARTERLY", "BIANNUAL", "ANNUAL"]),
+  currency: z.enum(["ARS", "USD"]).default("ARS"),
   startDate: z.string().transform(v => new Date(v)),
   isPaid: z.coerce.boolean(),
   invoiced: z.coerce.boolean(),
@@ -25,6 +26,7 @@ const bulkContractSchema = z.object({
 
 const bulkOneTimeSchema = z.object({
   clientId: z.string().min(1),
+  currency: z.enum(["ARS", "USD"]).default("ARS"),
   deliveryDate: z.string().optional().transform(v => v ? new Date(v) : null),
   isPaid: z.coerce.boolean(),
   invoiced: z.coerce.boolean(),
@@ -48,6 +50,7 @@ export async function createContractAction(formData: FormData) {
   const raw = {
     clientId: formData.get("clientId"),
     frequency: formData.get("frequency"),
+    currency: formData.get("currency") || "ARS",
     startDate: formData.get("startDate"),
     isPaid: formData.get("isPaid") === "on",
     invoiced: formData.get("invoiced") === "on",
@@ -77,6 +80,7 @@ export async function createContractAction(formData: FormData) {
             create: dues.map((d, i) => ({
               dueDate: d,
               amount: s.price,
+              currency: common.currency,
               isPaid: i === 0 ? isPaid : false,
               paidAt: i === 0 && isPaid ? new Date() : null,
               invoiced: i === 0 ? invoiced : false,
@@ -99,6 +103,7 @@ export async function createOneTimeAction(formData: FormData) {
 
   const raw = {
     clientId: formData.get("clientId"),
+    currency: formData.get("currency") || "ARS",
     deliveryDate: formData.get("deliveryDate"),
     isPaid: formData.get("isPaid") === "on",
     invoiced: formData.get("invoiced") === "on",
@@ -132,6 +137,7 @@ export async function createOneTimeAction(formData: FormData) {
 const updateContractSchema = z.object({
   serviceBaseId: z.string().min(1),
   frequency: z.enum(["MONTHLY", "QUARTERLY", "BIANNUAL", "ANNUAL"]),
+  currency: z.enum(["ARS", "USD"]).optional(),
   startDate: z.string().transform(v => new Date(v)),
   cost: z.coerce.number().min(0).default(0),
   price: z.coerce.number().min(0).default(0),
@@ -158,6 +164,7 @@ export async function updateContractAction(id: string, paymentId: string, formDa
   if (!parsed.success) return { error: parsed.error.issues[0].message };
 
   const dueDate = parsed.data.startDate;
+  const currency = parsed.data.currency ?? old.currency;
   const updated = await prisma.serviceContract.update({
     where: { id },
     data: { ...parsed.data, monthlyCosts: { set: monthlyCostIds.map((mcId) => ({ id: mcId })) } },
@@ -166,7 +173,7 @@ export async function updateContractAction(id: string, paymentId: string, formDa
   const currentPayment = old.payments[0];
   await prisma.contractPayment.update({
     where: { id: currentPayment.id },
-    data: { dueDate, amount: parsed.data.price, isPaid, paidAt: isPaid ? (currentPayment.paidAt ?? new Date()) : null, invoiced, invoiceSent },
+    data: { dueDate, amount: parsed.data.price, currency, isPaid, paidAt: isPaid ? (currentPayment.paidAt ?? new Date()) : null, invoiced, invoiceSent },
   });
 
   // Changing frequency/date invalidates the rest of the year's schedule, so
@@ -183,9 +190,11 @@ export async function updateContractAction(id: string, paymentId: string, formDa
   );
   if (futureDues.length > 0) {
     await prisma.contractPayment.createMany({
-      data: futureDues.map((d) => ({ contractId: id, dueDate: d, amount: parsed.data.price })),
+      data: futureDues.map((d) => ({ contractId: id, dueDate: d, amount: parsed.data.price, currency })),
     });
   }
+  // Mantener la moneda consistente en todas las cuotas del contrato.
+  await prisma.contractPayment.updateMany({ where: { contractId: id }, data: { currency } });
 
   await auditLog({ action: "UPDATE", entity: "ServiceContract", entityId: id, oldValue: old, newValue: updated });
   revalidatePath("/services");
@@ -196,6 +205,7 @@ export async function updateContractAction(id: string, paymentId: string, formDa
 const updateOneTimeSchema = z.object({
   serviceBaseId: z.string().min(1),
   name: z.string().optional(),
+  currency: z.enum(["ARS", "USD"]).optional(),
   internalCost: z.coerce.number().min(0).default(0),
   finalPrice: z.coerce.number().min(0).default(0),
   deliveryDate: z.string().optional().transform(v => v ? new Date(v) : null),

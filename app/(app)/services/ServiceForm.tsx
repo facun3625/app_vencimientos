@@ -19,6 +19,8 @@ export default function ServiceForm({ type, clients, serviceBases, monthlyCosts 
   const [isPaid, setIsPaid] = useState(false);
   const [invoiced, setInvoiced] = useState(false);
   const [invoiceSent, setInvoiceSent] = useState(false);
+  const [currency, setCurrency] = useState("ARS");
+  const symbol = currency === "USD" ? "US$" : "$";
 
   const addRow = () => setRows([...rows, { id: Date.now(), serviceBaseId: "", cost: 0, price: 0, notes: "", monthlyCostIds: [] as string[] }]);
   const removeRow = (id: number) => rows.length > 1 && setRows(rows.filter(r => r.id !== id));
@@ -73,6 +75,22 @@ export default function ServiceForm({ type, clients, serviceBases, monthlyCosts 
           <div className="form-group !mb-0">
             <label className="form-label text-[10px] uppercase tracking-wider text-[var(--text-muted)]">Cliente Destino</label>
             <ClientCombobox clients={clients} name="clientId" defaultClientId={defaultClientId} />
+          </div>
+
+          <div className="form-group !mb-0">
+            <label className="form-label text-[10px] uppercase tracking-wider text-[var(--text-muted)]">Moneda</label>
+            <div className="relative">
+              <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 text-emerald-500/60" size={16} />
+              <select
+                name="currency"
+                className="form-input !pl-10 !py-[0.8rem]"
+                value={currency}
+                onChange={(e) => setCurrency(e.target.value)}
+              >
+                <option value="ARS">Pesos (ARS)</option>
+                <option value="USD">Dólares (USD)</option>
+              </select>
+            </div>
           </div>
 
           {type === "RECURRING" ? (
@@ -199,7 +217,7 @@ export default function ServiceForm({ type, clients, serviceBases, monthlyCosts 
                 </div>
 
                 <div className="md:col-span-3 form-group !mb-0">
-                  <label className="form-label text-[10px]">Costo (Egresos)</label>
+                  <label className="form-label text-[10px]">Costo (Egresos) · {symbol}</label>
                   <div className="relative">
                     <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 text-red-400/50" size={14} />
                     <input
@@ -214,7 +232,7 @@ export default function ServiceForm({ type, clients, serviceBases, monthlyCosts 
                 </div>
 
                 <div className="md:col-span-3 form-group !mb-0">
-                  <label className="form-label text-[10px]">Precio (Ingresos)</label>
+                  <label className="form-label text-[10px]">Precio (Ingresos) · {symbol}</label>
                   <div className="relative">
                     <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 text-emerald-400/50" size={14} />
                     <input
