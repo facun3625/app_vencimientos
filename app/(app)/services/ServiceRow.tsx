@@ -107,6 +107,13 @@ export default function ServiceRow({ service, serviceBases, monthlyCosts = [] }:
                   <input name="price" type="number" step="0.01" defaultValue={service.price} required className="form-input !pl-9 font-bold text-emerald-400" />
                 </div>
               </div>
+              <div className="form-group">
+                <label className="form-label text-[10px]">Moneda</label>
+                <select name="currency" defaultValue={service.currency || "ARS"} className="form-input">
+                  <option value="ARS">Pesos (ARS)</option>
+                  <option value="USD">Dólares (USD)</option>
+                </select>
+              </div>
             </>
           ) : (
             <>
@@ -133,6 +140,13 @@ export default function ServiceRow({ service, serviceBases, monthlyCosts = [] }:
                   <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 text-emerald-400/50" size={14} />
                   <input name="finalPrice" type="number" step="0.01" defaultValue={service.finalPrice} required className="form-input !pl-9 font-bold text-emerald-400" />
                 </div>
+              </div>
+              <div className="form-group">
+                <label className="form-label text-[10px]">Moneda</label>
+                <select name="currency" defaultValue={service.currency || "ARS"} className="form-input">
+                  <option value="ARS">Pesos (ARS)</option>
+                  <option value="USD">Dólares (USD)</option>
+                </select>
               </div>
             </>
           )}

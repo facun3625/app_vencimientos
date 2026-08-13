@@ -128,6 +128,13 @@ export default function ClientServiceRow({
                   />
                 </div>
               </div>
+              <div className="form-group">
+                <label className="form-label text-[10px]">Moneda</label>
+                <select name="currency" defaultValue={service.currency || "ARS"} className="form-input">
+                  <option value="ARS">Pesos (ARS)</option>
+                  <option value="USD">Dólares (USD)</option>
+                </select>
+              </div>
             </>
           ) : (
             <>
@@ -170,6 +177,13 @@ export default function ClientServiceRow({
                     className="form-input !pl-9 font-bold text-emerald-400"
                   />
                 </div>
+              </div>
+              <div className="form-group">
+                <label className="form-label text-[10px]">Moneda</label>
+                <select name="currency" defaultValue={service.currency || "ARS"} className="form-input">
+                  <option value="ARS">Pesos (ARS)</option>
+                  <option value="USD">Dólares (USD)</option>
+                </select>
               </div>
             </>
           )}

@@ -11,7 +11,7 @@ import { sumByCurrency, formatByCurrency } from "@/lib/money";
 
 const FREQ: Record<string, string> = { MONTHLY: "Mensual", QUARTERLY: "Trimestral", BIANNUAL: "Semestral", ANNUAL: "Anual" };
 
-export default async function ServicesPage({ searchParams }: { searchParams: Promise<{ month?: string; type?: string; freq?: string; paid?: string; sent?: string }> }) {
+export default async function ServicesPage({ searchParams }: { searchParams: Promise<{ month?: string; type?: string; freq?: string; paid?: string; sent?: string; currency?: string }> }) {
   const session = await auth();
   if (!session) redirect("/login");
   const workspaceId = (session.user as any).workspaceId;
@@ -24,14 +24,15 @@ export default async function ServicesPage({ searchParams }: { searchParams: Pro
   const freqFilter = ["MONTHLY", "QUARTERLY", "BIANNUAL", "ANNUAL"].includes(params.freq || "") ? params.freq! : "";
   const paidFilter = params.paid === "paid" || params.paid === "pending" ? params.paid : "all";
   const sentFilter = params.sent === "sent" || params.sent === "unsent" ? params.sent : "all";
+  const currencyFilter = params.currency === "ARS" || params.currency === "USD" ? params.currency : "all";
   const [y, m] = monthParam.split("-").map(Number);
   const monthDate = new Date(y, m - 1, 1);
   const prevMonthStr = format(subMonths(monthDate, 1), "yyyy-MM");
   const nextMonthStr = format(addMonths(monthDate, 1), "yyyy-MM");
   const currentMonthStr = format(new Date(), "yyyy-MM");
 
-  const buildHref = (overrides: { month?: string; type?: string; freq?: string; paid?: string; sent?: string }) => {
-    const q = new URLSearchParams({ month: monthParam, type: typeFilter, freq: freqFilter, paid: paidFilter, sent: sentFilter, ...overrides });
+  const buildHref = (overrides: { month?: string; type?: string; freq?: string; paid?: string; sent?: string; currency?: string }) => {
+    const q = new URLSearchParams({ month: monthParam, type: typeFilter, freq: freqFilter, paid: paidFilter, sent: sentFilter, currency: currencyFilter, ...overrides });
     return `/services?${q.toString()}`;
   };
 
@@ -79,6 +80,7 @@ export default async function ServicesPage({ searchParams }: { searchParams: Pro
    .filter(s => !freqFilter || (s as any).frequency === freqFilter)
    .filter(s => paidFilter === "all" || (paidFilter === "paid" ? s.isPaid : !s.isPaid))
    .filter(s => sentFilter === "all" || (sentFilter === "sent" ? s.invoiceSent : !s.invoiceSent))
+   .filter(s => currencyFilter === "all" || ((s as any).currency || "ARS") === currencyFilter)
    .sort((a, b) => new Date(b.displayDate).getTime() - new Date(a.displayDate).getTime());
 
   const monthByCurrency = sumByCurrency(allServices, s => Number(s.price), s => (s as any).currency);
@@ -184,8 +186,14 @@ export default async function ServicesPage({ searchParams }: { searchParams: Pro
           <Link href={buildHref({ sent: "unsent" })} className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-[11px] font-semibold transition-all ${sentFilter === 'unsent' ? 'bg-white/20 text-white' : 'text-[var(--text-muted)] hover:text-white'}`}>Sin enviar</Link>
         </div>
 
-        {(freqFilter || paidFilter !== "all" || sentFilter !== "all") && (
-          <Link href={buildHref({ freq: "", paid: "all", sent: "all" })} className="text-[11px] text-[var(--text-muted)] hover:text-white underline">
+        <div className="flex gap-1 bg-white/5 p-1 rounded-xl border border-white/5 max-w-full overflow-x-auto [&>a]:shrink-0">
+          <Link href={buildHref({ currency: "all" })} className={`px-3 py-1.5 rounded-lg text-[11px] font-semibold transition-all ${currencyFilter === 'all' ? 'bg-white/10 text-white' : 'text-[var(--text-muted)] hover:text-white'}`}>Todos</Link>
+          <Link href={buildHref({ currency: "ARS" })} className={`px-3 py-1.5 rounded-lg text-[11px] font-semibold transition-all ${currencyFilter === 'ARS' ? 'bg-emerald-500/20 text-emerald-400' : 'text-[var(--text-muted)] hover:text-white'}`}>$ Pesos</Link>
+          <Link href={buildHref({ currency: "USD" })} className={`px-3 py-1.5 rounded-lg text-[11px] font-semibold transition-all ${currencyFilter === 'USD' ? 'bg-emerald-500/20 text-emerald-400' : 'text-[var(--text-muted)] hover:text-white'}`}>US$ Dólares</Link>
+        </div>
+
+        {(freqFilter || paidFilter !== "all" || sentFilter !== "all" || currencyFilter !== "all") && (
+          <Link href={buildHref({ freq: "", paid: "all", sent: "all", currency: "all" })} className="text-[11px] text-[var(--text-muted)] hover:text-white underline">
             Limpiar filtros
           </Link>
         )}
