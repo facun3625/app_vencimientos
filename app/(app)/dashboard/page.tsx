@@ -7,6 +7,7 @@ import Link from "next/link";
 import { getSevenBusinessDaysRange } from "@/lib/date-utils";
 import { ensureCurrentOrders } from "@/lib/billing";
 import { getCurrentYearNetResult } from "@/lib/businessSummary";
+import { formatMoney, formatByCurrency } from "@/lib/money";
 
 export default async function DashboardPage() {
   const session = await auth();
@@ -43,11 +44,13 @@ export default async function DashboardPage() {
     client: p.contract.client,
     serviceBase: p.contract.serviceBase,
     price: p.contract.price,
+    currency: p.currency,
     expirationDate: p.dueDate,
   }));
   const upcomingExpirations = upcomingPayments;
 
-  const { year: netYear, netResult, monthlyAverage } = await getCurrentYearNetResult(workspaceId);
+  const { year: netYear, netByCurrency, monthlyAverageByCurrency } = await getCurrentYearNetResult(workspaceId);
+  const netPositive = Object.values(netByCurrency).every(v => v >= 0);
 
   return (
     <div className="page-container">
@@ -98,8 +101,8 @@ export default async function DashboardPage() {
             <span className="stat-label">Promedio Mensual (Neto)</span>
             <div className="p-2 bg-blue-500/10 rounded-lg text-blue-500"><Wallet size={16} /></div>
           </div>
-          <div className={`stat-value ${netResult >= 0 ? "text-emerald-400" : "text-red-400"}`}>
-            ${Math.round(monthlyAverage).toLocaleString("es-AR")}
+          <div className={`stat-value !text-2xl ${netPositive ? "text-emerald-400" : "text-red-400"}`}>
+            {formatByCurrency(monthlyAverageByCurrency)}
           </div>
           <p className="text-xs text-[var(--text-muted)] mt-2">Resultado neto {netYear} / 12</p>
         </div>
@@ -159,7 +162,7 @@ export default async function DashboardPage() {
                              {daysLeft < 0 ? 'Vencido' : daysLeft === 0 ? '¡Vencía Hoy!' : `En ${daysLeft} días`}
                           </div>
                         </td>
-                        <td className="font-black text-white font-mono text-right pr-4">${c.price}</td>
+                        <td className="font-black text-white font-mono text-right pr-4">{formatMoney(c.price, c.currency)}</td>
                       </tr>
                     );
                   })}

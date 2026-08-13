@@ -34,26 +34,51 @@ export async function getCurrentYearNetResult(workspaceId: string) {
     prisma.monthlyExpense.findMany({ where: { workspaceId, month: { gte: yearStart, lt: yearEnd } } }),
   ]);
 
-  const costUsers: Record<string, number> = {};
-  contracts.forEach(c => c.monthlyCosts.forEach(mc => { costUsers[mc.id] = (costUsers[mc.id] || 0) + 1; }));
-  const monthly = contracts.map(c => {
-    const months = FREQUENCY_TO_MONTHS[c.frequency] ?? 1;
-    const sharedCost = c.monthlyCosts.reduce((sum, mc) => sum + mc.amount / costUsers[mc.id], 0);
-    return { startDate: c.startDate, monthlyCost: c.cost / months + sharedCost };
-  });
-
   const monthsUpToReal = (startDate: Date) => {
     const effectiveStart = startDate > yearStart ? startDate : yearStart;
     if (effectiveStart >= realCutoff) return 0;
     return Math.max(Math.min(differenceInCalendarMonths(realCutoff, effectiveStart), 12), 0);
   };
 
-  const recurringRevenue = payments.reduce((sum, p) => sum + p.amount, 0);
-  const recurringCost = monthly.reduce((sum, c) => sum + c.monthlyCost * monthsUpToReal(c.startDate), 0);
-  const onceRevenue = onceServices.reduce((sum, o) => sum + o.finalPrice, 0);
-  const onceCost = onceServices.reduce((sum, o) => sum + o.internalCost, 0);
-  const expensesTotal = expenses.reduce((sum, e) => sum + e.amount, 0);
+  // Multi-moneda: ingresos y costo interno del servicio viven en la moneda del
+  // servicio; los costos mensuales compartidos y los gastos son SIEMPRE ARS
+  // (infraestructura en pesos), así que pesan solo en el neto en pesos.
+  const add = (acc: Record<string, number>, cur: string, amount: number) => {
+    acc[cur] = (acc[cur] || 0) + amount;
+  };
 
-  const netResult = recurringRevenue + onceRevenue - (recurringCost + onceCost) - expensesTotal;
-  return { year: now.getFullYear(), netResult, monthlyAverage: netResult / 12 };
+  const costUsers: Record<string, number> = {};
+  contracts.forEach(c => c.monthlyCosts.forEach(mc => { costUsers[mc.id] = (costUsers[mc.id] || 0) + 1; }));
+
+  const revenue: Record<string, number> = {};
+  const internalCost: Record<string, number> = {};
+  let sharedCostTotal = 0; // ARS
+  const expensesTotal = expenses.reduce((sum, e) => sum + e.amount, 0); // ARS
+
+  payments.forEach(p => add(revenue, p.currency || "ARS", p.amount));
+  onceServices.forEach(o => {
+    add(revenue, o.currency || "ARS", o.finalPrice);
+    add(internalCost, o.currency || "ARS", o.internalCost);
+  });
+  contracts.forEach(c => {
+    const months = FREQUENCY_TO_MONTHS[c.frequency] ?? 1;
+    const m = monthsUpToReal(c.startDate);
+    add(internalCost, c.currency || "ARS", (c.cost / months) * m);
+    const sharedMonthly = c.monthlyCosts.reduce((sum, mc) => sum + mc.amount / costUsers[mc.id], 0);
+    sharedCostTotal += sharedMonthly * m;
+  });
+
+  const currencies = ["ARS", "USD"];
+  const netByCurrency: Record<string, number> = {};
+  currencies.forEach(cur => {
+    const rev = revenue[cur] || 0;
+    let cost = internalCost[cur] || 0;
+    if (cur === "ARS") cost += sharedCostTotal + expensesTotal;
+    netByCurrency[cur] = rev - cost;
+  });
+
+  const monthlyAverageByCurrency: Record<string, number> = {};
+  currencies.forEach(cur => { monthlyAverageByCurrency[cur] = netByCurrency[cur] / 12; });
+
+  return { year: now.getFullYear(), netByCurrency, monthlyAverageByCurrency };
 }
