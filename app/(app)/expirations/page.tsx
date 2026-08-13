@@ -6,6 +6,7 @@ import { Clock, AlertCircle, CheckCircle2, Calendar, Repeat, Zap, Wallet } from 
 import CalendarView from "./CalendarView";
 import ExpirationGroupCard from "./ExpirationGroupCard";
 import { ensureCurrentOrders } from "@/lib/billing";
+import { sumByCurrency, formatByCurrency } from "@/lib/money";
 
 export default async function ExpirationsPage({
   searchParams,
@@ -52,6 +53,7 @@ export default async function ExpirationsPage({
     client: p.contract.client,
     serviceBase: p.contract.serviceBase,
     price: p.contract.price,
+    currency: p.currency,
     expirationDate: p.dueDate,
     isPaid: p.isPaid,
   }));
@@ -64,6 +66,7 @@ export default async function ExpirationsPage({
     client: s.client,
     serviceBase: s.serviceBase,
     price: s.finalPrice,
+    currency: s.currency,
     expirationDate: s.deliveryDate || s.createdAt,
     isPaid: s.isPaid,
   }));
@@ -84,7 +87,7 @@ export default async function ExpirationsPage({
   const pendingItems = items.filter(c => !c.isPaid);
   const pendingRecurring = pendingItems.filter(c => c.type === "contract");
   const pendingOnetime = pendingItems.filter(c => c.type === "onetime");
-  const pendingTotal = pendingItems.reduce((sum, c) => sum + Number(c.price), 0);
+  const pendingByCurrency = sumByCurrency(pendingItems, c => c.price, c => c.currency);
 
   return (
     <div className="page-container">
@@ -134,8 +137,8 @@ export default async function ExpirationsPage({
           </div>
           <div className="flex items-center gap-2 text-sm ml-auto">
             <Wallet size={14} className="text-emerald-400" />
-            <span className="text-[var(--text-muted)]">Total pendiente en este período:</span>
-            <span className="text-emerald-400 font-black font-mono">${pendingTotal}</span>
+            <span className="text-[var(--text-muted)]">Por cobrar en este período:</span>
+            <span className="text-emerald-400 font-black font-mono">{formatByCurrency(pendingByCurrency)}</span>
           </div>
         </div>
       )}
@@ -151,11 +154,11 @@ export default async function ExpirationsPage({
               const key = `${c.clientId}-${dStr}`;
               let group = grouped.find(g => g.key === key);
               if (!group) {
-                group = { key, client: c.client, date: c.expirationDate, dateLabel: format(new Date(c.expirationDate), "dd/MM/yyyy"), items: [], total: 0 };
+                group = { key, client: c.client, date: c.expirationDate, dateLabel: format(new Date(c.expirationDate), "dd/MM/yyyy"), items: [], totalsByCurrency: {} as Record<string, number> };
                 grouped.push(group);
               }
               group.items.push(c);
-              group.total += Number(c.price);
+              group.totalsByCurrency[c.currency] = (group.totalsByCurrency[c.currency] || 0) + Number(c.price);
             });
 
             if (grouped.length === 0) {

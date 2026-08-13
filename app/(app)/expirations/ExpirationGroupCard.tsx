@@ -3,6 +3,7 @@ import { useState } from "react";
 import { ChevronDown, ChevronRight, Calendar, CheckCircle2, Clock, Repeat, Zap } from "lucide-react";
 import PaidToggle from "../services/PaidToggle";
 import GroupPaidButton from "./GroupPaidButton";
+import { formatMoney, formatByCurrency } from "@/lib/money";
 
 export default function ExpirationGroupCard({ group, isPast }: { group: any; isPast: boolean }) {
   const [open, setOpen] = useState(false);
@@ -51,7 +52,7 @@ export default function ExpirationGroupCard({ group, isPast }: { group: any; isP
           </div>
           <div className="text-right">
             <p className="text-[9px] uppercase tracking-wider text-[var(--text-muted)] font-bold">Total</p>
-            <p className="text-lg font-black text-white font-mono">${group.total}</p>
+            <p className="text-lg font-black text-white font-mono">{formatByCurrency(group.totalsByCurrency)}</p>
           </div>
           {group.items.length > 1 && (
             <GroupPaidButton
@@ -72,7 +73,7 @@ export default function ExpirationGroupCard({ group, isPast }: { group: any; isP
                 <span className="text-[9px] uppercase tracking-wider text-[var(--text-muted)]">{c.viewType === "ONE_TIME" ? "Único" : "Recurrente"}</span>
               </div>
               <div className="flex items-center gap-8">
-                <span className="font-bold text-white/70 font-mono text-sm">${c.price}</span>
+                <span className="font-bold text-white/70 font-mono text-sm">{formatMoney(c.price, c.currency)}</span>
                 <PaidToggle id={c.id} type={c.type} isPaid={c.isPaid} />
               </div>
             </div>
